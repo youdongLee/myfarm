@@ -76,7 +76,7 @@ export function PetDetailSheet({
   const pettedAlready = isPettedToday(petId);
   const canFeed = !isBuffed && remaining.feed > 0;
 
-  const handleFeed = async () => {
+  const handleFeed = () => {
     if (isBuffed) {
       Alert.alert('이미 먹이를 먹었어요', `${formatBuffRemain(buffRemainMs)} 후에 다시 줄 수 있어요.`);
       return;
@@ -85,6 +85,13 @@ export function PetDetailSheet({
       Alert.alert('오늘 먹이를 다 줬어요', '내일 다시 시도해주세요.');
       return;
     }
+    Alert.alert('먹이주기', `광고를 본 뒤 ${def.name}에게 먹이를 줘요. (24시간 ×1.5 생산) 진행할까요?`, [
+      { text: '취소', style: 'cancel' },
+      { text: '광고 보고 먹이주기', onPress: doFeed },
+    ]);
+  };
+
+  const doFeed = async () => {
     const ok = await runRewardAd(AD_FEED, async () => {
       await feedPet(petId);
       Alert.alert('🥕 먹이주기 완료', `${def.name}이(가) 24시간 동안 1.5배 더 생산해요!`);
@@ -92,11 +99,18 @@ export function PetDetailSheet({
     if (!ok) Alert.alert('광고를 불러올 수 없어요', '잠시 후 다시 시도해주세요.');
   };
 
-  const handlePet = async () => {
+  const handlePet = () => {
     if (pettedAlready) {
       Alert.alert('오늘은 충분히 쓰다듬었어요', '내일 다시 만나요!');
       return;
     }
+    Alert.alert('쓰다듬기', `광고를 본 뒤 ${def.name}을(를) 쓰다듬어요. (+5 코인) 진행할까요?`, [
+      { text: '취소', style: 'cancel' },
+      { text: '광고 보고 쓰다듬기', onPress: doPet },
+    ]);
+  };
+
+  const doPet = async () => {
     const ok = await runRewardAd(AD_PET, async () => {
       await petPet(petId);
       Alert.alert('🥰 쓰다듬기 완료', `${def.name}이(가) 행복해해요! +5 코인`);

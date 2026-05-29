@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AD_HARVEST, BANNER_HOME } from '../src/constants/ads';
+import { AD_EGG, AD_HARVEST, BANNER_HOME } from '../src/constants/ads';
 import { PetDetailSheet } from '../src/components/PetDetailSheet';
 import { PetWithHat } from '../src/components/PetWithHat';
 import { IMG } from '../src/constants/imageData';
@@ -55,11 +55,18 @@ function HomePage() {
     }
   };
 
-  const handleHarvest = async () => {
+  const handleHarvest = () => {
     if (pendingCoins <= 0) {
       Alert.alert('아직 모인 코인이 없어요', '펫을 농장에 두고 시간이 지나면 코인이 쌓여요.');
       return;
     }
+    Alert.alert('코인 수확', `광고를 본 뒤 ${pendingCoins} 코인을 수확해요. 진행할까요?`, [
+      { text: '취소', style: 'cancel' },
+      { text: '광고 보고 수확', onPress: doHarvest },
+    ]);
+  };
+
+  const doHarvest = async () => {
     const ok = await runRewardAd(AD_HARVEST, async () => {
       const amount = await harvest();
       Alert.alert('🌟 수확 완료!', `+${amount} 코인을 받았어요!`);
@@ -67,13 +74,23 @@ function HomePage() {
     if (!ok) Alert.alert('광고를 불러올 수 없어요', '잠시 후 다시 시도해주세요.');
   };
 
-  const handleAttendance = async () => {
+  const handleAttendance = () => {
     if (remaining.attendance <= 0) {
       Alert.alert('이미 받았어요', '내일 다시 출석해주세요.');
       return;
     }
-    const ok = await claimAttendance();
-    if (ok) Alert.alert('🎁 출석 완료', '알 1개를 받았어요!');
+    Alert.alert('출석 보상', '광고를 본 뒤 알 1개를 받아요. 진행할까요?', [
+      { text: '취소', style: 'cancel' },
+      { text: '광고 보고 받기', onPress: doAttendance },
+    ]);
+  };
+
+  const doAttendance = async () => {
+    const ok = await runRewardAd(AD_EGG, async () => {
+      const claimed = await claimAttendance();
+      if (claimed) Alert.alert('🎁 출석 완료', '알 1개를 받았어요!');
+    });
+    if (!ok) Alert.alert('광고를 불러올 수 없어요', '잠시 후 다시 시도해주세요.');
   };
 
   return (
@@ -153,7 +170,7 @@ function HomePage() {
             <Text style={styles.attendanceEmoji}>📅</Text>
             <View style={{ flex: 1 }}>
               <Txt typography="t5" color={TEXT_PRIMARY}>오늘의 출석 보상</Txt>
-              <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>알 1개 받기</Txt>
+              <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>광고 보고 알 1개</Txt>
             </View>
             <Text style={styles.cardArrow}>›</Text>
           </TouchableOpacity>
@@ -204,7 +221,7 @@ function HomePage() {
         </View>
 
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.22</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.23</Txt>
         </TouchableOpacity>
       </ScrollView>
 
