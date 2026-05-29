@@ -28,7 +28,9 @@ function formatBuffRemain(ms: number): string {
   return `${m}분`;
 }
 
-export function PetDetailSheet({ petId, onClose }: { petId: string | null; onClose: () => void }) {
+export function PetDetailSheet({
+  petId, onClose, onBuyStones,
+}: { petId: string | null; onClose: () => void; onBuyStones?: () => void }) {
   const {
     state, now, petHourlyRate, isPettedToday, remaining,
     feedPet, petPet, swapFarmPet, petStage, canEvolve, evolvePet,
@@ -257,6 +259,11 @@ export function PetDetailSheet({ petId, onClose }: { petId: string | null; onClo
               </Txt>
             </TouchableOpacity>
           )}
+          {onBuyStones && stage < MAX_STAGE && (
+            <TouchableOpacity style={styles.buyStoneBtn} onPress={onBuyStones} activeOpacity={0.8}>
+              <Txt typography="t5" color={PRIMARY_DARK}>💎 진화석 구매</Txt>
+            </TouchableOpacity>
+          )}
         </View>
 
         <TouchableOpacity onPress={handleRelease} activeOpacity={0.7} style={styles.releaseBtn}>
@@ -346,6 +353,10 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY, borderRadius: 12, paddingVertical: 13, alignItems: 'center',
   },
   evolveBtnDisabled: { backgroundColor: '#F3F4F6' },
+  buyStoneBtn: {
+    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: PRIMARY,
+  },
 
   releaseBtn: {
     paddingVertical: 12, alignItems: 'center',

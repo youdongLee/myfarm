@@ -20,6 +20,7 @@ import {
   Rarity,
   STAGE_MULTIPLIER,
 } from '../src/constants/pets';
+import { completeStoneOrder, getPendingStoneOrders } from '../src/lib/stoneIap';
 
 type ActionKey = 'attendance' | 'egg' | 'game' | 'feed' | 'exchange';
 
@@ -196,18 +197,30 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, []);
 
-  // 초기 로드
+  // 초기 로드 + 미결 IAP 진화석 복원
   useEffect(() => {
     (async () => {
       const raw = await Storage.getItem(STORAGE_KEY).catch(() => null);
+      let next = emptyState();
       if (raw) {
         try {
-          setState(migrate(JSON.parse(raw)));
+          next = migrate(JSON.parse(raw));
         } catch {
           // ignore parse error, keep default
         }
       }
+      // 결제됐으나 미지급된 진화석 주문 복원 — 먼저 상태 반영·저장 후 완료 처리
+      const pending = await getPendingStoneOrders();
+      const addStones = pending.reduce((sum, o) => sum + o.stones, 0);
+      if (addStones > 0) {
+        next = { ...next, evolveStones: next.evolveStones + addStones };
+      }
+      setState(next);
+      await Storage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
       setLoaded(true);
+      for (const o of pending) {
+        await completeStoneOrder(o.orderId);
+      }
     })();
   }, []);
 

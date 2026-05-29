@@ -206,11 +206,15 @@ function HomePage() {
         </View>
 
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.17</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.18</Txt>
         </TouchableOpacity>
       </ScrollView>
 
-      <PetDetailSheet petId={selectedPetId} onClose={() => setSelectedPetId(null)} />
+      <PetDetailSheet
+        petId={selectedPetId}
+        onClose={() => setSelectedPetId(null)}
+        onBuyStones={() => { setSelectedPetId(null); navigation.navigate('/stones'); }}
+      />
     </View>
   );
 }
