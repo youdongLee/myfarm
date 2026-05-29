@@ -8,11 +8,11 @@ import { PET_MAP, STAGE_HAT } from '../constants/pets';
 const HAT_ANCHORS: Record<string, [number, number, number]> = {
   dog: [0.49, 0.27, 0.62],
   cat: [0.50, 0.26, 0.70],
-  chick: [0.50, 0.35, 0.64],
+  chick: [0.50, 0.30, 0.64],
   parrot: [0.55, 0.23, 0.52],
   chinchilla: [0.49, 0.27, 0.60],
-  gecko: [0.37, 0.37, 0.40],
-  ferret: [0.47, 0.39, 0.44],
+  gecko: [0.37, 0.31, 0.40],
+  ferret: [0.47, 0.33, 0.44],
   pig: [0.46, 0.27, 0.56],
 };
 
