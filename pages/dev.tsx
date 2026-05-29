@@ -16,7 +16,7 @@ export const Route = createRoute('/dev', {
 function DevPage() {
   const {
     state, hourlyRate, pendingCoins, remaining,
-    resetAll, grantStones, devUnlockAll, devSetStar, devSetStage, petStage,
+    resetAll, grantStones, devUnlockAll, devSetStar, devSetStage, petStage, setAdSkip,
   } = useMyfarm();
 
   const handleReset = () => {
@@ -97,6 +97,26 @@ function DevPage() {
           </Txt>
         </View>
 
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.toggleRow}
+            onPress={() => setAdSkip(!state.adSkip)}
+            activeOpacity={0.8}
+          >
+            <View style={{ flex: 1 }}>
+              <Txt typography="t5" color={TEXT_PRIMARY}>보상형 광고 스킵</Txt>
+              <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>
+                ON이면 광고 없이 보상 지급 (테스트용)
+              </Txt>
+            </View>
+            <View style={[styles.toggleChip, state.adSkip && styles.toggleChipOn]}>
+              <Txt typography="t5" color={state.adSkip ? '#FFFFFF' : TEXT_MUTED}>
+                {state.adSkip ? 'ON' : 'OFF'}
+              </Txt>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <Button
           type="primary"
           size="large"
@@ -159,4 +179,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: PRIMARY, backgroundColor: '#FFFBEB',
   },
   stepBtnText: { fontSize: 16, fontWeight: '700', color: PRIMARY_DARK },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  toggleChip: {
+    minWidth: 56, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
+    alignItems: 'center', backgroundColor: '#F3F4F6',
+  },
+  toggleChipOn: { backgroundColor: PRIMARY },
 });

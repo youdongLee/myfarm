@@ -21,6 +21,7 @@ import {
   STAGE_MULTIPLIER,
 } from '../src/constants/pets';
 import { completeStoneOrder, getPendingStoneOrders } from '../src/lib/stoneIap';
+import { setRewardAdSkip } from '../src/lib/rewardAd';
 
 type ActionKey = 'attendance' | 'egg' | 'game' | 'feed' | 'exchange';
 
@@ -45,6 +46,7 @@ interface PersistState {
   ownedStars: Record<string, number>; // petId → 1..5 (없으면 0)
   petStages: Record<string, number>; // petId → 0(아기)~3(성인), 없으면 0
   evolveStones: number; // 진화석 보유량 (IAP로 충전 예정)
+  adSkip: boolean; // [개발용] 보상형 광고 스킵 토글
   farmPets: (string | null)[]; // length = FARM_SLOTS
   eggs: number;
   hatching: HatchSlot[]; // length up to HATCH_SLOTS
@@ -92,6 +94,8 @@ interface MyfarmContextValue {
   evolvePet: (petId: string) => Promise<boolean>;
   /** 진화석 지급 — IAP 지급 콜백/개발용 (n개 추가) */
   grantStones: (n: number) => Promise<void>;
+  /** [개발용] 보상형 광고 스킵 토글 설정 */
+  setAdSkip: (v: boolean) => Promise<void>;
   /** [개발용] 모든 펫 1성 소환 + 빈 농장 자동 배치 */
   devUnlockAll: () => Promise<void>;
   /** [개발용] 펫 별 지정 (0=미보유~5) */
@@ -125,6 +129,7 @@ function emptyState(): PersistState {
     ownedStars: {},
     petStages: {},
     evolveStones: 0,
+    adSkip: false,
     farmPets: Array(FARM_SLOTS).fill(null),
     eggs: 0,
     hatching: [],
@@ -151,6 +156,7 @@ function migrate(raw: any): PersistState {
     ownedStars: raw.ownedStars && typeof raw.ownedStars === 'object' ? raw.ownedStars : {},
     petStages: raw.petStages && typeof raw.petStages === 'object' ? raw.petStages : {},
     evolveStones: typeof raw.evolveStones === 'number' ? raw.evolveStones : 0,
+    adSkip: typeof raw.adSkip === 'boolean' ? raw.adSkip : false,
     petTotals: raw.petTotals && typeof raw.petTotals === 'object' ? raw.petTotals : {},
     lastPetted: raw.lastPetted && typeof raw.lastPetted === 'object' ? raw.lastPetted : {},
   };
@@ -215,6 +221,7 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
       if (addStones > 0) {
         next = { ...next, evolveStones: next.evolveStones + addStones };
       }
+      setRewardAdSkip(next.adSkip);
       setState(next);
       await Storage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
       setLoaded(true);
@@ -479,6 +486,11 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     await save({ ...state, evolveStones: Math.max(0, state.evolveStones + n) });
   };
 
+  const setAdSkip = async (v: boolean) => {
+    setRewardAdSkip(v);
+    await save({ ...state, adSkip: v });
+  };
+
   const devUnlockAll = async () => {
     const owned = { ...state.ownedStars };
     PETS.forEach(p => { if ((owned[p.id] ?? 0) < 1) owned[p.id] = 1; });
@@ -540,6 +552,7 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
         canEvolve,
         evolvePet,
         grantStones,
+        setAdSkip,
         devUnlockAll,
         devSetStar,
         devSetStage,
