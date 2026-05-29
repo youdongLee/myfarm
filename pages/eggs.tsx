@@ -1,8 +1,9 @@
+import { InlineAd } from '@apps-in-toss/framework';
 import { createRoute, Image } from '@granite-js/react-native';
 import { PageNavbar, Txt } from '@toss/tds-react-native';
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AD_EGG, AD_HATCH } from '../src/constants/ads';
+import { AD_EGG, AD_HATCH, BANNER_EGGS } from '../src/constants/ads';
 import { IMG } from '../src/constants/imageData';
 import { HATCH_MS, HATCH_SLOTS } from '../src/constants/economy';
 import { PET_MAP } from '../src/constants/pets';
@@ -77,6 +78,8 @@ function EggsPage() {
     <View style={styles.container}>
       <PageNavbar />
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <InlineAd adGroupId={BANNER_EGGS} variant="expanded" impressFallbackOnMount />
+
         <View style={styles.summary}>
           <Image source={EGG_IMG} style={styles.summaryIcon} />
           <View style={{ flex: 1 }}>

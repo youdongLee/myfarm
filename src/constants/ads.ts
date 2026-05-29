@@ -35,7 +35,11 @@ export const AD_GAME = [
   'ait.v2.live.21021a8b83274708',
 ];
 
-// 인라인 배너 / 이미지 (홈·도감 배너는 동일 배너 그룹 공유)
+// 인라인 배너 / 이미지 (배너는 모두 동일 배너 그룹 ID 공유)
 export const BANNER_HOME = 'ait.v2.live.cfd9000b6a4e420a';
 export const BANNER_DEX = 'ait.v2.live.cfd9000b6a4e420a';
+export const BANNER_EGGS = 'ait.v2.live.cfd9000b6a4e420a';
+export const BANNER_EXCHANGE = 'ait.v2.live.cfd9000b6a4e420a';
+export const BANNER_SHEET = 'ait.v2.live.cfd9000b6a4e420a';
+export const BANNER_GAME = 'ait.v2.live.cfd9000b6a4e420a';
 export const IMG_GUIDE = 'ait.v2.live.ccb385a49e074709';

@@ -45,11 +45,9 @@ function DexPage() {
   return (
     <View style={styles.container}>
       <PageNavbar />
-      <View style={styles.bannerWrap}>
-        <InlineAd adGroupId={BANNER_DEX} variant="expanded" impressFallbackOnMount />
-      </View>
-
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <InlineAd adGroupId={BANNER_DEX} variant="expanded" impressFallbackOnMount />
+
         <View style={styles.summary}>
           <Txt typography="t4" color={TEXT_PRIMARY}>도감 {collected} / {PETS.length}</Txt>
           <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 4 }}>
@@ -102,7 +100,6 @@ function DexPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  bannerWrap: { paddingHorizontal: 16, paddingTop: 16 },
   scrollContent: { padding: 16, gap: 14, paddingBottom: 24 },
   summary: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,

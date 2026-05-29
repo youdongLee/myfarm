@@ -1,10 +1,11 @@
+import { InlineAd } from '@apps-in-toss/framework';
 import { createRoute, Image } from '@granite-js/react-native';
 import { Button, PageNavbar, Txt } from '@toss/tds-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert, Dimensions, StyleSheet, TouchableWithoutFeedback, View,
 } from 'react-native';
-import { AD_GAME } from '../src/constants/ads';
+import { AD_GAME, BANNER_GAME } from '../src/constants/ads';
 import {
   FOOD_POINTS,
   GAME_BONUS_EGG_CHANCE, GAME_BONUS_EGG_THRESHOLD, GAME_COIN_PER_POINT,
@@ -40,7 +41,7 @@ const SPAWN_MS = 600;
 const ITEM_SIZE = 56;
 
 const SCREEN = Dimensions.get('window');
-const PLAYFIELD_HEIGHT = Math.min(SCREEN.height - 320, 500);
+const PLAYFIELD_HEIGHT = Math.min(SCREEN.height - 400, 460);
 
 function pickFoodType(): FoodType {
   const r = Math.random();
@@ -159,6 +160,11 @@ function GamePage() {
         <Txt typography="t5" color={PRIMARY_DARK}>⏱ {phase === 'play' ? timeLeft : GAME_DURATION}초</Txt>
       </View>
 
+      {/* 배너 광고 (점수판 아래) */}
+      <View style={styles.gameBannerWrap}>
+        <InlineAd adGroupId={BANNER_GAME} variant="expanded" impressFallbackOnMount />
+      </View>
+
       {/* 플레이 영역 */}
       <View
         style={[styles.playfield, { height: PLAYFIELD_HEIGHT }]}
@@ -218,6 +224,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 12, marginHorizontal: 16, marginTop: 8,
     backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: CARD_BORDER,
   },
+  gameBannerWrap: { marginHorizontal: 16, marginTop: 8 },
   playfield: {
     margin: 16, backgroundColor: '#FFFFFF', borderRadius: 16,
     borderWidth: 1, borderColor: CARD_BORDER, overflow: 'hidden', position: 'relative',

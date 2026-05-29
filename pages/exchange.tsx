@@ -1,7 +1,9 @@
+import { InlineAd } from '@apps-in-toss/framework';
 import { createRoute, Image } from '@granite-js/react-native';
 import { PageNavbar, Txt } from '@toss/tds-react-native';
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BANNER_EXCHANGE } from '../src/constants/ads';
 import { EXCHANGE_TIERS } from '../src/constants/economy';
 import { IMG } from '../src/constants/imageData';
 import {
@@ -51,6 +53,8 @@ function ExchangePage() {
     <View style={styles.container}>
       <PageNavbar />
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <InlineAd adGroupId={BANNER_EXCHANGE} variant="expanded" impressFallbackOnMount />
+
         <View style={styles.summary}>
           <Image source={COIN_IMG} style={styles.summaryIcon} />
           <View style={{ flex: 1 }}>

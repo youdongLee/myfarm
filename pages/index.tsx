@@ -80,11 +80,9 @@ function HomePage() {
     <View style={styles.container}>
       <PageNavbar />
 
-      <View style={styles.bannerWrap}>
-        <InlineAd adGroupId={BANNER_HOME} variant="expanded" impressFallbackOnMount />
-      </View>
-
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <InlineAd adGroupId={BANNER_HOME} variant="expanded" impressFallbackOnMount />
+
         {/* 상단 통계 */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
@@ -206,7 +204,7 @@ function HomePage() {
         </View>
 
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.21</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.22</Txt>
         </TouchableOpacity>
       </ScrollView>
 
@@ -245,7 +243,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 24, gap: 14 },
-  bannerWrap: { width: '100%', paddingHorizontal: 16, paddingTop: 16, backgroundColor: BG },
 
   statsRow: { flexDirection: 'row', gap: 10 },
   statCard: {

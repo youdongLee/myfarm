@@ -4,7 +4,8 @@ import React, { useEffect, useRef } from 'react';
 import {
   Alert, Animated, Dimensions, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View,
 } from 'react-native';
-import { AD_FEED, AD_PET } from '../constants/ads';
+import { InlineAd } from '@apps-in-toss/framework';
+import { AD_FEED, AD_PET, BANNER_SHEET } from '../constants/ads';
 import { EVOLVE_STONE_COST, FEED_BUFF_MS } from '../constants/economy';
 import { IMG } from '../constants/imageData';
 import {
@@ -202,6 +203,9 @@ export function PetDetailSheet({
             </View>
           </View>
         </View>
+
+        {/* 배너 광고 (액션 카드 상단) */}
+        <InlineAd adGroupId={BANNER_SHEET} variant="expanded" impressFallbackOnMount />
 
         {/* 액션 */}
         <View style={styles.actions}>
