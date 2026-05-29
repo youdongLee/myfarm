@@ -30,6 +30,18 @@ function StonesPage() {
 
   const handleBuy = (sku: string) => {
     if (buying) return;
+    Alert.alert(
+      '구매 전 안내',
+      '진화석은 이 기기에 저장돼요.\n\n구매 후 사용하지 않은 진화석이 남아 있는 상태에서 기기를 변경하면, 남은 진화석은 복원되지 않고 사라질 수 있어요.\n\n이에 동의하시면 구매를 진행해주세요.',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '구매 진행', onPress: () => startPurchase(sku) },
+      ],
+    );
+  };
+
+  const startPurchase = (sku: string) => {
+    if (buying) return;
     setBuying(sku);
     purchaseStone(
       sku,
@@ -96,6 +108,7 @@ function StonesPage() {
         <View style={styles.notice}>
           <Txt typography="c1" color={TEXT_MUTED}>• 진화석은 반려동물 진화에 사용되는 유료 아이템이에요.</Txt>
           <Txt typography="c1" color={TEXT_MUTED}>• 결제·환불은 앱마켓 정책을 따라요.</Txt>
+          <Txt typography="c1" color={TEXT_MUTED}>• 미사용 진화석은 기기 변경 시 복원되지 않아요.</Txt>
           <Txt typography="c1" color={TEXT_MUTED}>• 진화석은 생산 속도를 높일 뿐, 포인트 지급 한도와는 무관해요.</Txt>
         </View>
       </ScrollView>
