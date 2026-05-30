@@ -75,9 +75,12 @@ interface MyfarmContextValue {
   harvest: () => Promise<number>; // 수확된 코인 반환
   claimAttendance: () => Promise<boolean>; // 알 1개 + true/false
   claimEggFromAd: () => Promise<boolean>;
-  startHatch: () => Promise<boolean>;
-  instantHatch: (index: number) => Promise<string | null>; // 부화된 petId
-  completeHatch: (index: number) => Promise<string | null>;
+  /** 부화 시작 — 'all_maxed'면 모두 만렙이라 알 보존하고 시작 거부 */
+  startHatch: () => Promise<boolean | 'all_maxed'>;
+  /** 즉시 부화 — 'all_maxed'면 알 환불, null이면 실패, string이면 부화된 petId */
+  instantHatch: (index: number) => Promise<string | 'all_maxed' | null>;
+  /** 부화 완료 — 'all_maxed'면 알 환불, null이면 실패, string이면 부화된 petId */
+  completeHatch: (index: number) => Promise<string | 'all_maxed' | null>;
   feedPet: (petId: string) => Promise<boolean>;
   swapFarmPet: (slot: number, petId: string | null) => Promise<void>;
   addGameReward: (coins: number, bonusEgg: boolean) => Promise<void>;
@@ -405,9 +408,12 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const startHatch = async (): Promise<boolean> => {
+  const startHatch = async (): Promise<boolean | 'all_maxed'> => {
     if (state.eggs <= 0) return false;
     if (state.hatching.length >= HATCH_SLOTS) return false;
+    // 모든 펫 만렙이면 알 보존하고 시작 거부 (알 낭비 방지)
+    const anyEligible = PETS.some(p => (state.ownedStars[p.id] ?? 0) < MAX_STAR);
+    if (!anyEligible) return 'all_maxed';
     const next: PersistState = {
       ...state,
       eggs: state.eggs - 1,
@@ -417,10 +423,21 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const hatchOne = async (index: number): Promise<string | null> => {
+  const hatchOne = async (index: number): Promise<string | 'all_maxed' | null> => {
     if (index < 0 || index >= state.hatching.length) return null;
     // 별/농장 변경 전 기존 구성으로 누적분 락인
     const base = settle(state, Date.now());
+    // 모든 펫이 만렙(MAX_STAR)이면 알 환불 + 부화 슬롯 제거 → 'all_maxed' 신호
+    const anyEligible = PETS.some(p => (base.ownedStars[p.id] ?? 0) < MAX_STAR);
+    if (!anyEligible) {
+      const refunded: PersistState = {
+        ...base,
+        hatching: base.hatching.filter((_, i) => i !== index),
+        eggs: base.eggs + 1,
+      };
+      await save(refunded);
+      return 'all_maxed';
+    }
     const petId = rollPet(base.ownedStars);
     const currStar = base.ownedStars[petId] ?? 0;
     const newStar = Math.min(currStar + 1, MAX_STAR);
@@ -447,7 +464,7 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     return petId;
   };
 
-  const completeHatch = async (index: number): Promise<string | null> => {
+  const completeHatch = async (index: number): Promise<string | 'all_maxed' | null> => {
     const slot = state.hatching[index];
     if (!slot) return null;
     const ms = HATCH_MS[slot.type];
@@ -455,7 +472,7 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     return hatchOne(index);
   };
 
-  const instantHatch = async (index: number): Promise<string | null> => {
+  const instantHatch = async (index: number): Promise<string | 'all_maxed' | null> => {
     return hatchOne(index);
   };
 

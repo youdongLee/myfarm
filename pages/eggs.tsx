@@ -96,13 +96,20 @@ function EggsPage() {
       Alert.alert('부화 자리가 꽉 찼어요', '한 칸이 비면 다시 시도해주세요.');
       return;
     }
-    await startHatch();
+    const result = await startHatch();
+    if (result === 'all_maxed') {
+      Alert.alert('🎉 모든 펫 완성!', '모든 펫이 성인 ★5성에 도달했어요. 더 이상 모을 펫이 없어서 알이 보존됐어요.');
+    }
   };
 
   const handleComplete = async (index: number) => {
-    const petId = await completeHatch(index);
-    if (petId) {
-      const pet = PET_MAP[petId];
+    const result = await completeHatch(index);
+    if (result === 'all_maxed') {
+      Alert.alert('🎉 모든 펫 완성!', '모든 펫이 성인 ★5성에 도달했어요. 더 이상 모을 펫이 없어서 알 1개가 반환됐어요.');
+      return;
+    }
+    if (result) {
+      const pet = PET_MAP[result];
       Alert.alert('🎉 펫을 만났어요!', `${pet?.name}이(가) 부화했어요!`);
     }
   };
@@ -116,9 +123,13 @@ function EggsPage() {
 
   const doInstantHatch = async (index: number) => {
     const ok = await runRewardAd(AD_HATCH, async () => {
-      const petId = await instantHatch(index);
-      if (petId) {
-        const pet = PET_MAP[petId];
+      const result = await instantHatch(index);
+      if (result === 'all_maxed') {
+        Alert.alert('🎉 모든 펫 완성!', '모든 펫이 성인 ★5성에 도달했어요. 더 이상 모을 펫이 없어서 알 1개가 반환됐어요.');
+        return;
+      }
+      if (result) {
+        const pet = PET_MAP[result];
         Alert.alert('🎉 펫을 만났어요!', `${pet?.name}이(가) 부화했어요!`);
       }
     });

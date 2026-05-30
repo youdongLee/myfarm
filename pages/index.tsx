@@ -222,7 +222,7 @@ function HomePage() {
         </View>
 
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.30</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.31</Txt>
         </TouchableOpacity>
       </ScrollView>
 
