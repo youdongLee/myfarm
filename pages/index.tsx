@@ -209,6 +209,7 @@ function HomePage() {
           <Txt typography="t5" color={TEXT_PRIMARY} style={{ marginBottom: 8 }}>보상 안내</Txt>
           {[
             { icon: '🌟', text: '농장의 펫이 시간당 코인을 모아줘요' },
+            { icon: '⏱', text: '오프라인 누적은 최대 8시간까지 모여요' },
             { icon: '🥚', text: '알을 부화시켜 새 펫을 모아보세요' },
             { icon: '⭐', text: '중복 펫은 별이 올라 생산량 UP' },
             { icon: '💰', text: '100 코인 = 1원 토스포인트' },
@@ -221,7 +222,7 @@ function HomePage() {
         </View>
 
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.24</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.25</Txt>
         </TouchableOpacity>
       </ScrollView>
 
