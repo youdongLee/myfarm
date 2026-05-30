@@ -26,16 +26,15 @@ function GuidePage() {
       <PageNavbar />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.intro}>
-          <Txt typography="t3" color={TEXT_PRIMARY}>🎮 먹이잡기 게임</Txt>
-          <Txt typography="t5" color={TEXT_SECONDARY} style={{ marginTop: 6 }}>
-            10초 동안 떨어지는 먹이를 탭해서 점수를 모아보세요
+          <Txt typography="t5" color={TEXT_PRIMARY}>
+            🎮 10초 동안 떨어지는 먹이를 탭해서 점수를 모아보세요
           </Txt>
         </View>
 
         <View style={styles.rule}>
-          <RuleRow img={CARROT} title="일반 먹이" desc="당근/씨앗/뼈다귀 — 점수 +1" />
-          <RuleRow img={APPLE} title="황금사과" desc="점수 +3 (보너스!)" />
-          <RuleRow img={BOMB} title="폭탄" desc="피하세요! 점수 -3" />
+          <RuleRow img={CARROT} text="일반 먹이 · 당근/씨앗/뼈다귀 · 점수 +1" />
+          <RuleRow img={APPLE} text="황금사과 · 보너스 점수 +3" />
+          <RuleRow img={BOMB} text="폭탄 · 피하세요! 점수 -3" />
         </View>
 
         <View style={styles.tips}>
@@ -63,14 +62,11 @@ function GuidePage() {
   );
 }
 
-function RuleRow({ img, title, desc }: { img: any; title: string; desc: string }) {
+function RuleRow({ img, text }: { img: any; text: string }) {
   return (
     <View style={styles.ruleRow}>
       <Image source={img} style={styles.ruleImg} />
-      <View style={{ flex: 1 }}>
-        <Txt typography="t5" color={TEXT_PRIMARY}>{title}</Txt>
-        <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>{desc}</Txt>
-      </View>
+      <Txt typography="t5" color={TEXT_PRIMARY} style={{ flex: 1 }}>{text}</Txt>
     </View>
   );
 }

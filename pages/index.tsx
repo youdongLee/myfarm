@@ -1,17 +1,19 @@
 import { InlineAd } from '@apps-in-toss/framework';
 import { createRoute, Image } from '@granite-js/react-native';
 import { PageNavbar, Txt } from '@toss/tds-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   ImageBackground,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AD_EGG, AD_HARVEST, BANNER_HOME } from '../src/constants/ads';
+import { AD_EGG, AD_HARVEST, BANNER_HOME, IMG_HOME } from '../src/constants/ads';
 import { PetDetailSheet } from '../src/components/PetDetailSheet';
 import { PetWithHat } from '../src/components/PetWithHat';
 import { IMG } from '../src/constants/imageData';
@@ -93,28 +95,61 @@ function HomePage() {
     if (!ok) Alert.alert('광고를 불러올 수 없어요', '잠시 후 다시 시도해주세요.');
   };
 
+  // 포인트 교환 카드 가시성 감지 → 안 보이면 플로팅 안내 표시
+  const scrollRef = useRef<ScrollView>(null);
+  const [scrollViewH, setScrollViewH] = useState(0);
+  const [exchangeY, setExchangeY] = useState<number | null>(null);
+  const [pillVisible, setPillVisible] = useState(true);
+
+  const evaluatePill = (scrollY: number) => {
+    if (exchangeY === null || scrollViewH === 0) return;
+    const shouldShow = scrollY + scrollViewH < exchangeY + 40;
+    setPillVisible((prev) => (prev !== shouldShow ? shouldShow : prev));
+  };
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    evaluatePill(e.nativeEvent.contentOffset.y);
+  };
+
+  useEffect(() => {
+    // 초기 위치(0)에서도 평가 — 컨텐츠가 작아 스크롤 불필요한 경우 대비
+    evaluatePill(0);
+  }, [exchangeY, scrollViewH]);
+
   return (
     <View style={styles.container}>
       <PageNavbar />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <InlineAd adGroupId={BANNER_HOME} variant="expanded" impressFallbackOnMount />
-
-        {/* 상단 통계 */}
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={32}
+        onLayout={(e) => setScrollViewH(e.nativeEvent.layout.height)}
+      >
+        {/* 상단 통계 (각 카드 2행: 아이콘+숫자 / 라벨) */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Image source={COIN_IMG} style={styles.statIcon} />
-            <Txt typography="t4" color={TEXT_PRIMARY}>{state.coins.toLocaleString()}</Txt>
+            <View style={styles.statTopRow}>
+              <Image source={COIN_IMG} style={styles.statIconSm} />
+              <Txt typography="t4" color={TEXT_PRIMARY}>{state.coins.toLocaleString()}</Txt>
+            </View>
             <Txt typography="c1" color={TEXT_SECONDARY}>코인</Txt>
           </View>
           <View style={styles.statCard}>
-            <Image source={EGG_IMG} style={styles.statIcon} />
-            <Txt typography="t4" color={TEXT_PRIMARY}>{state.eggs}</Txt>
+            <View style={styles.statTopRow}>
+              <Image source={EGG_IMG} style={styles.statIconSm} />
+              <Txt typography="t4" color={TEXT_PRIMARY}>{state.eggs}</Txt>
+            </View>
             <Txt typography="c1" color={TEXT_SECONDARY}>알</Txt>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statEmoji}>⚡</Text>
-            <Txt typography="t4" color={TEXT_PRIMARY}>{hourlyRate.toFixed(1)}</Txt>
+            <View style={styles.statTopRow}>
+              <Text style={styles.statEmojiSm}>⚡</Text>
+              <Txt typography="t4" color={TEXT_PRIMARY}>{hourlyRate.toFixed(1)}</Txt>
+            </View>
             <Txt typography="c1" color={TEXT_SECONDARY}>시간당</Txt>
           </View>
         </View>
@@ -152,17 +187,17 @@ function HomePage() {
           </View>
         </ImageBackground>
 
-        {/* 수확 버튼 */}
+        {/* 수확 버튼 (1행) */}
         <TouchableOpacity style={styles.harvestBtn} onPress={handleHarvest} activeOpacity={0.85}>
           <Image source={COIN_IMG} style={styles.harvestIcon} />
-          <View style={{ flex: 1 }}>
-            <Txt typography="t4" color="#FFFFFF">코인 수확하기</Txt>
-            <Txt typography="c1" color="rgba(255,255,255,0.92)" style={{ marginTop: 2 }}>
-              {pendingCoins > 0 ? `+${pendingCoins} 코인 대기 중` : '아직 모인 코인이 없어요'}
-            </Txt>
-          </View>
+          <Txt typography="t4" color="#FFFFFF" style={{ flex: 1 }}>
+            코인 수확하기{pendingCoins > 0 ? ` (+${pendingCoins.toLocaleString()})` : ''}
+          </Txt>
           <Text style={styles.harvestArrow}>›</Text>
         </TouchableOpacity>
+
+        {/* 배너 광고 (수확 버튼 아래) */}
+        <InlineAd adGroupId={BANNER_HOME} variant="expanded" impressFallbackOnMount />
 
         {/* 출석 (오늘 안 받았으면 노출) */}
         {remaining.attendance > 0 && (
@@ -176,33 +211,28 @@ function HomePage() {
           </TouchableOpacity>
         )}
 
-        {/* 액션 타일 */}
-        <View style={styles.tileGrid}>
-          <ActionTile
-            image={EGG_IMG}
-            label="알 받기"
-            sub={`${remaining.egg}/3 남음`}
-            onPress={() => navigation.navigate('/eggs')}
-          />
-          <ActionTile
-            emoji="🎮"
-            label="먹이잡기"
-            sub={`${remaining.game}/3 남음`}
-            onPress={() => navigation.navigate('/guide')}
-          />
-          <ActionTile
-            emoji="📖"
-            label="도감"
-            sub={`${Object.keys(state.ownedStars).filter(k => state.ownedStars[k] > 0).length}/8`}
-            onPress={() => navigation.navigate('/dex')}
-          />
-          <ActionTile
-            image={COIN_IMG}
-            label="포인트 교환"
-            sub={`${state.coins.toLocaleString()} 코인`}
-            onPress={() => navigation.navigate('/exchange')}
-          />
-        </View>
+        {/* 액션 타일 (1열) */}
+        <ActionTile
+          image={EGG_IMG}
+          label="알 받기"
+          sub={`${remaining.egg}/3 남음`}
+          onPress={() => navigation.navigate('/eggs')}
+        />
+        <ActionTile
+          emoji="🎮"
+          label="먹이잡기"
+          sub={`${remaining.game}/3 남음`}
+          onPress={() => navigation.navigate('/guide')}
+        />
+        <ActionTile
+          emoji="📖"
+          label="도감"
+          sub={`${Object.keys(state.ownedStars).filter(k => state.ownedStars[k] > 0).length}/8`}
+          onPress={() => navigation.navigate('/dex')}
+        />
+
+        {/* 이미지 광고 (보상 안내 위) */}
+        <InlineAd adGroupId={IMG_HOME} variant="card" impressFallbackOnMount />
 
         {/* 보상 안내 */}
         <View style={styles.guide}>
@@ -221,10 +251,31 @@ function HomePage() {
           ))}
         </View>
 
+        {/* 포인트 교환 카드 (보상 안내 아래) */}
+        <View onLayout={(e) => setExchangeY(e.nativeEvent.layout.y)}>
+          <ActionTile
+            image={COIN_IMG}
+            label="포인트 교환"
+            sub={`${state.coins.toLocaleString()} 코인 보유`}
+            onPress={() => navigation.navigate('/exchange')}
+          />
+        </View>
+
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.31</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.32</Txt>
         </TouchableOpacity>
       </ScrollView>
+
+      {pillVisible && (
+        <TouchableOpacity
+          style={styles.floatingPill}
+          onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.pillIcon}>💰</Text>
+          <Txt typography="c1" color="#FFFFFF">아래로 스크롤하면 포인트 교환</Txt>
+        </TouchableOpacity>
+      )}
 
       <PetDetailSheet
         petId={selectedPetId}
@@ -246,14 +297,17 @@ function ActionTile({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.actionTile} onPress={onPress} activeOpacity={0.8}>
       {image ? (
-        <Image source={image} style={styles.tileImg} />
+        <Image source={image} style={styles.actionImg} />
       ) : (
-        <Text style={styles.tileEmoji}>{emoji}</Text>
+        <Text style={styles.actionEmoji}>{emoji}</Text>
       )}
-      <Txt typography="t5" color={TEXT_PRIMARY}>{label}</Txt>
-      <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>{sub}</Txt>
+      <View style={{ flex: 1 }}>
+        <Txt typography="t5" color={TEXT_PRIMARY}>{label}</Txt>
+        <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>{sub}</Txt>
+      </View>
+      <Text style={styles.actionArrow}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -265,11 +319,14 @@ const styles = StyleSheet.create({
 
   statsRow: { flexDirection: 'row', gap: 10 },
   statCard: {
-    flex: 1, alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16,
-    paddingVertical: 12, gap: 4, borderWidth: 1, borderColor: CARD_BORDER,
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16,
+    paddingVertical: 10, paddingHorizontal: 12, gap: 2,
+    borderWidth: 1, borderColor: CARD_BORDER,
+    alignItems: 'flex-start',
   },
-  statIcon: { width: 32, height: 32 },
-  statEmoji: { fontSize: 26 },
+  statTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statIconSm: { width: 22, height: 22 },
+  statEmojiSm: { fontSize: 20, width: 22, textAlign: 'center' },
 
   farm: { width: '100%', aspectRatio: 1, borderRadius: 20, overflow: 'hidden' },
   farmBg: { borderRadius: 20 },
@@ -307,15 +364,24 @@ const styles = StyleSheet.create({
   attendanceEmoji: { fontSize: 24 },
   cardArrow: { fontSize: 20, color: '#B0B8C1' },
 
-  tileGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 10,
+  actionTile: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: CARD_BORDER,
   },
-  tile: {
-    width: '48%', flexGrow: 1, backgroundColor: '#FFFFFF', borderRadius: 14,
-    padding: 14, alignItems: 'center', borderWidth: 1, borderColor: CARD_BORDER,
+  actionImg: { width: 40, height: 40, resizeMode: 'contain' },
+  actionEmoji: { fontSize: 28, width: 40, textAlign: 'center' },
+  actionArrow: { fontSize: 20, color: '#B0B8C1', fontWeight: '700' },
+
+  floatingPill: {
+    position: 'absolute', bottom: 20, alignSelf: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: PRIMARY_DARK, borderRadius: 22,
+    paddingHorizontal: 16, paddingVertical: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 6, elevation: 6,
   },
-  tileEmoji: { fontSize: 28, marginBottom: 4 },
-  tileImg: { width: 36, height: 36, marginBottom: 4, resizeMode: 'contain' },
+  pillIcon: { fontSize: 14, color: '#FFFFFF' },
 
   guide: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, gap: 8,

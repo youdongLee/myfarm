@@ -16,11 +16,11 @@ export const DAILY_LIMITS = {
   exchange: 1,     // 토스포인트 교환
 };
 
-/** 교환 단위: 코인 → 토스포인트(원) */
+/** 교환 단위: 코인 → 토스포인트(원). 100:1 비율 유지 */
 export const EXCHANGE_TIERS = [
-  { coin: 500, won: 5 },
-  { coin: 1000, won: 10 },
-  { coin: 2000, won: 20 },
+  { coin: 10000, won: 100 },
+  { coin: 50000, won: 500 },
+  { coin: 100000, won: 1000 },
 ];
 
 /** 알 부화 시간 (ms) */

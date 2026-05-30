@@ -18,11 +18,11 @@ export const Route = createRoute('/exchange', {
 
 const COIN_IMG = IMG.coin;
 
-// TODO: 콘솔에서 발급받은 실제 프로모션 코드로 교체
+// TODO: 콘솔에서 발급받은 실제 프로모션 코드로 교체 (won 단위 키)
 const PROMO_CODES: Record<number, string> = {
-  5: 'TEST_PROMO_5',
-  10: 'TEST_PROMO_10',
-  20: 'TEST_PROMO_20',
+  100: 'TEST_PROMO_100',
+  500: 'TEST_PROMO_500',
+  1000: 'TEST_PROMO_1000',
 };
 
 function ExchangePage() {
@@ -53,8 +53,6 @@ function ExchangePage() {
     <View style={styles.container}>
       <PageNavbar />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <InlineAd adGroupId={BANNER_EXCHANGE} variant="expanded" impressFallbackOnMount />
-
         <View style={styles.summary}>
           <Image source={COIN_IMG} style={styles.summaryIcon} />
           <View style={{ flex: 1 }}>
@@ -84,6 +82,8 @@ function ExchangePage() {
             );
           })}
         </View>
+
+        <InlineAd adGroupId={BANNER_EXCHANGE} variant="expanded" impressFallbackOnMount />
 
         <View style={styles.notice}>
           <Txt typography="c1" color={TEXT_MUTED}>

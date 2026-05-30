@@ -43,3 +43,4 @@ export const BANNER_EXCHANGE = 'ait.v2.live.cfd9000b6a4e420a';
 export const BANNER_SHEET = 'ait.v2.live.cfd9000b6a4e420a';
 export const BANNER_GAME = 'ait.v2.live.cfd9000b6a4e420a';
 export const IMG_GUIDE = 'ait.v2.live.ccb385a49e074709';
+export const IMG_HOME = 'ait.v2.live.ccb385a49e074709';

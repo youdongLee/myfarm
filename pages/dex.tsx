@@ -42,12 +42,47 @@ function DexPage() {
     }
   };
 
+  const renderDexCard = (p: typeof PETS[number]) => {
+    const star = state.ownedStars[p.id] ?? 0;
+    const owned = star > 0;
+    const stage = petStage(p.id);
+    const inFarm = state.farmPets.includes(p.id);
+    return (
+      <TouchableOpacity
+        key={p.id}
+        style={[styles.card, !owned && styles.cardLocked, inFarm && styles.cardInFarm]}
+        onPress={() => owned && placeInFarm(p.id)}
+        activeOpacity={owned ? 0.7 : 1}
+      >
+        <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLOR[p.rarity] }]}>
+          <Text style={styles.rarityText}>{RARITY_LABEL[p.rarity]}</Text>
+        </View>
+        <PetWithHat
+          petId={p.id}
+          stage={owned ? stage : 0}
+          style={[styles.petImg, !owned && styles.petImgLocked]}
+        />
+        <Txt typography="t5" color={owned ? TEXT_PRIMARY : TEXT_MUTED}>
+          {owned && stage > 0 ? `${STAGE_LABEL[stage]} ${p.name}` : p.name}
+        </Txt>
+        <View style={styles.starRow}>
+          {Array.from({ length: MAX_STAR }, (_, i) => (
+            <Text key={i} style={[styles.star, i < star && styles.starOn]}>★</Text>
+          ))}
+        </View>
+        {inFarm && (
+          <View style={styles.inFarmTag}>
+            <Text style={styles.inFarmTagText}>농장</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <PageNavbar />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <InlineAd adGroupId={BANNER_DEX} variant="expanded" impressFallbackOnMount />
-
         <View style={styles.summary}>
           <Txt typography="t4" color={TEXT_PRIMARY}>도감 {collected} / {PETS.length}</Txt>
           <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 4 }}>
@@ -56,42 +91,13 @@ function DexPage() {
         </View>
 
         <View style={styles.grid}>
-          {PETS.map((p) => {
-            const star = state.ownedStars[p.id] ?? 0;
-            const owned = star > 0;
-            const stage = petStage(p.id);
-            const inFarm = state.farmPets.includes(p.id);
-            return (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.card, !owned && styles.cardLocked, inFarm && styles.cardInFarm]}
-                onPress={() => owned && placeInFarm(p.id)}
-                activeOpacity={owned ? 0.7 : 1}
-              >
-                <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLOR[p.rarity] }]}>
-                  <Text style={styles.rarityText}>{RARITY_LABEL[p.rarity]}</Text>
-                </View>
-                <PetWithHat
-                  petId={p.id}
-                  stage={owned ? stage : 0}
-                  style={[styles.petImg, !owned && styles.petImgLocked]}
-                />
-                <Txt typography="t5" color={owned ? TEXT_PRIMARY : TEXT_MUTED}>
-                  {owned && stage > 0 ? `${STAGE_LABEL[stage]} ${p.name}` : p.name}
-                </Txt>
-                <View style={styles.starRow}>
-                  {Array.from({ length: MAX_STAR }, (_, i) => (
-                    <Text key={i} style={[styles.star, i < star && styles.starOn]}>★</Text>
-                  ))}
-                </View>
-                {inFarm && (
-                  <View style={styles.inFarmTag}>
-                    <Text style={styles.inFarmTagText}>농장</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          {PETS.slice(0, 4).map((p) => renderDexCard(p))}
+        </View>
+
+        <InlineAd adGroupId={BANNER_DEX} variant="expanded" impressFallbackOnMount />
+
+        <View style={styles.grid}>
+          {PETS.slice(4).map((p) => renderDexCard(p))}
         </View>
       </ScrollView>
     </View>
