@@ -297,6 +297,20 @@ export function PetDetailSheet({
               <Txt typography="t5" color={PRIMARY_DARK}>{state.evolveStones}</Txt>
             </View>
           </View>
+
+          {onOpenGuide && (
+            <TouchableOpacity onPress={onOpenGuide} activeOpacity={0.85} style={styles.guideBanner}>
+              <Text style={styles.guideEmoji}>📖</Text>
+              <View style={{ flex: 1 }}>
+                <Txt typography="t5" color={PRIMARY_DARK}>진화란? 자세히 알아보기</Txt>
+                <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>
+                  단계마다 모자가 바뀌고 생산량이 ×3씩 늘어요
+                </Txt>
+              </View>
+              <Text style={styles.guideArrow}>›</Text>
+            </TouchableOpacity>
+          )}
+
           {stage < MAX_STAGE && (
             <TouchableOpacity
               style={[styles.evolveBtn, !canEvo && styles.evolveBtnDisabled]}
@@ -313,11 +327,6 @@ export function PetDetailSheet({
           {onBuyStones && (
             <TouchableOpacity style={styles.buyStoneBtn} onPress={onBuyStones} activeOpacity={0.8}>
               <Txt typography="t5" color={PRIMARY_DARK}>💎 진화석 구매</Txt>
-            </TouchableOpacity>
-          )}
-          {onOpenGuide && (
-            <TouchableOpacity onPress={onOpenGuide} activeOpacity={0.7} style={styles.guideLink}>
-              <Txt typography="c1" color={TEXT_MUTED}>진화란? 자세히 알아보기 ›</Txt>
             </TouchableOpacity>
           )}
         </View>
@@ -420,7 +429,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, alignItems: 'center',
     borderWidth: 1, borderColor: PRIMARY,
   },
-  guideLink: { alignItems: 'center', paddingVertical: 2 },
+  guideBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFFFFF', borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderWidth: 1.5, borderColor: PRIMARY,
+  },
+  guideEmoji: { fontSize: 22 },
+  guideArrow: { fontSize: 22, color: PRIMARY_DARK, fontWeight: '700' },
 
   releaseBtn: {
     paddingVertical: 12, alignItems: 'center',
