@@ -2,7 +2,7 @@ import { Image } from '@granite-js/react-native';
 import { Txt } from '@toss/tds-react-native';
 import React, { useEffect, useRef } from 'react';
 import {
-  Alert, Animated, Dimensions, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View,
+  Alert, Animated, Dimensions, PanResponder, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View,
 } from 'react-native';
 import { InlineAd } from '@apps-in-toss/framework';
 import { AD_FEED, AD_PET, BANNER_SHEET } from '../constants/ads';
@@ -45,6 +45,27 @@ export function PetDetailSheet({
   const translateY = useRef(new Animated.Value(SCREEN_H)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const visible = !!petId;
+
+  // 닫기 콜백을 ref로 캡처해 panResponder가 항상 최신 onClose를 호출
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  // 시트 상단(핸들 영역) 드래그 다운 → 닫기
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6,
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) translateY.setValue(g.dy);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 120 || g.vy > 0.6) {
+          onCloseRef.current();
+        } else {
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 0 }).start();
+        }
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -162,9 +183,16 @@ export function PetDetailSheet({
 
       {/* 시트 본체 */}
       <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-        {/* 핸들 */}
-        <View style={styles.handle} />
+        {/* 드래그 핸들 영역 — 잡아 내리면 닫힘 */}
+        <View style={styles.handleArea} {...panResponder.panHandlers}>
+          <View style={styles.handle} />
+        </View>
 
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.sheetBody}
+          showsVerticalScrollIndicator={false}
+        >
         {/* 헤더: 이미지 + 이름 + 등급 + 별 */}
         <View style={styles.header}>
           <View style={styles.petImgWrap}>
@@ -260,8 +288,8 @@ export function PetDetailSheet({
               <Txt typography="t5" color={TEXT_PRIMARY}>
                 {stage < MAX_STAGE ? `진화: ${STAGE_LABEL[stage]} → ${STAGE_LABEL[stage + 1]}` : '최종 단계 달성!'}
               </Txt>
-              <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>
-                {stage < MAX_STAGE ? '진화하면 최대 생산량이 3배까지 늘어요' : `${def.name}이(가) 완전히 자랐어요`}
+              <Txt typography="t5" color={PRIMARY_DARK} style={{ marginTop: 4 }}>
+                {stage < MAX_STAGE ? '✨ 진화하면 최대 생산량 ×3 UP' : `${def.name}이(가) 완전히 자랐어요`}
               </Txt>
             </View>
             <View style={styles.stoneBadge}>
@@ -282,7 +310,7 @@ export function PetDetailSheet({
               </Txt>
             </TouchableOpacity>
           )}
-          {onBuyStones && stage < MAX_STAGE && (
+          {onBuyStones && (
             <TouchableOpacity style={styles.buyStoneBtn} onPress={onBuyStones} activeOpacity={0.8}>
               <Txt typography="t5" color={PRIMARY_DARK}>💎 진화석 구매</Txt>
             </TouchableOpacity>
@@ -301,6 +329,7 @@ export function PetDetailSheet({
         <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={styles.closeBtn}>
           <Txt typography="t5" color={TEXT_SECONDARY}>닫기</Txt>
         </TouchableOpacity>
+        </ScrollView>
       </Animated.View>
     </View>
   );
@@ -313,15 +342,21 @@ const styles = StyleSheet.create({
   },
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
+    maxHeight: SCREEN_H * 0.88,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28,
-    gap: 14,
+    paddingHorizontal: 20, paddingTop: 8,
+  },
+  handleArea: {
+    paddingVertical: 8, alignItems: 'center',
   },
   handle: {
-    alignSelf: 'center', width: 40, height: 4,
-    borderRadius: 2, backgroundColor: '#E5E7EB',
-    marginBottom: 4,
+    width: 44, height: 5,
+    borderRadius: 3, backgroundColor: '#D1D5DB',
+  },
+  scrollArea: { flexGrow: 0 },
+  sheetBody: {
+    paddingBottom: 28, gap: 14,
   },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 14,

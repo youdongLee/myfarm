@@ -181,7 +181,7 @@ function HomePage() {
           <ActionTile
             image={EGG_IMG}
             label="알 받기"
-            sub={`${remaining.egg}/6 남음`}
+            sub={`${remaining.egg}/3 남음`}
             onPress={() => navigation.navigate('/eggs')}
           />
           <ActionTile
@@ -222,7 +222,7 @@ function HomePage() {
         </View>
 
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.28</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.29</Txt>
         </TouchableOpacity>
       </ScrollView>
 
