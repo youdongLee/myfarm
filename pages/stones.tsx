@@ -2,11 +2,11 @@ import { createRoute } from '@granite-js/react-native';
 import { PageNavbar, Txt } from '@toss/tds-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { STONE_PRODUCTS } from '../src/constants/iap';
+import { STONE_BY_SKU, STONE_PRODUCTS } from '../src/constants/iap';
 import {
   BG, CARD_BORDER, PRIMARY, PRIMARY_LIGHT, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY,
 } from '../src/constants/theme';
-import { fetchStoneProducts, purchaseStone, RemoteStoneProduct } from '../src/lib/stoneIap';
+import { fetchProducts, purchaseProduct, RemoteProduct } from '../src/lib/iap';
 import { useMyfarm } from '../stores/MyfarmContext';
 
 export const Route = createRoute('/stones', {
@@ -16,16 +16,16 @@ export const Route = createRoute('/stones', {
 
 function StonesPage() {
   const { state, grantStones } = useMyfarm();
-  const [remote, setRemote] = useState<RemoteStoneProduct[] | null>(null);
+  const [remote, setRemote] = useState<RemoteProduct[] | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
-    fetchStoneProducts().then((list) => { if (alive) setRemote(list); });
+    fetchProducts(new Set(Object.keys(STONE_BY_SKU))).then((list) => { if (alive) setRemote(list); });
     return () => { alive = false; };
   }, []);
 
-  const remoteBySku: Record<string, RemoteStoneProduct> = {};
+  const remoteBySku: Record<string, RemoteProduct> = {};
   (remote ?? []).forEach((p) => { remoteBySku[p.sku] = p; });
 
   const handleBuy = (sku: string) => {
@@ -43,9 +43,12 @@ function StonesPage() {
   const startPurchase = (sku: string) => {
     if (buying) return;
     setBuying(sku);
-    purchaseStone(
+    purchaseProduct(
       sku,
-      grantStones,
+      async () => {
+        const n = STONE_BY_SKU[sku] ?? 0;
+        if (n > 0) await grantStones(n);
+      },
       () => {
         setBuying(null);
         Alert.alert('🎉 구매 완료', '진화석이 지급됐어요!');

@@ -10,7 +10,7 @@ export const MAX_IDLE_HOURS = 8;
 /** 일일 액션 한도 */
 export const DAILY_LIMITS = {
   attendance: 1,   // 출석 보상
-  egg: 6,          // 알 받기 (광고)
+  egg: 3,          // 알 받기 (광고) — 일일 한도. 부족분은 IAP로 구매 가능
   game: 3,         // 먹이잡기 게임
   feed: FARM_SLOTS, // 펫당 1회 = 슬롯 수만큼
   exchange: 1,     // 토스포인트 교환

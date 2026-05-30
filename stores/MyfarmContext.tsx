@@ -20,7 +20,8 @@ import {
   Rarity,
   STAGE_MULTIPLIER,
 } from '../src/constants/pets';
-import { completeStoneOrder, getPendingStoneOrders } from '../src/lib/stoneIap';
+import { completeOrder, getPendingOrders } from '../src/lib/iap';
+import { EGG_BY_SKU, STONE_BY_SKU } from '../src/constants/iap';
 import { setRewardAdSkip } from '../src/lib/rewardAd';
 
 type ActionKey = 'attendance' | 'egg' | 'game' | 'feed' | 'exchange';
@@ -95,6 +96,8 @@ interface MyfarmContextValue {
   evolvePet: (petId: string) => Promise<boolean>;
   /** 진화석 지급 — IAP 지급 콜백/개발용 (n개 추가) */
   grantStones: (n: number) => Promise<void>;
+  /** 알 지급 — IAP 지급 콜백/개발용 (n개 추가) */
+  grantEggs: (n: number) => Promise<void>;
   /** [개발용] 보상형 광고 스킵 토글 설정 */
   setAdSkip: (v: boolean) => Promise<void>;
   /** [개발용] 모든 펫 1성 소환 + 빈 농장 자동 배치 */
@@ -265,18 +268,22 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
           // ignore parse error, keep default
         }
       }
-      // 결제됐으나 미지급된 진화석 주문 복원 — 먼저 상태 반영·저장 후 완료 처리
-      const pending = await getPendingStoneOrders();
-      const addStones = pending.reduce((sum, o) => sum + o.stones, 0);
-      if (addStones > 0) {
-        next = { ...next, evolveStones: next.evolveStones + addStones };
+      // 결제됐으나 미지급된 주문 복원 — 먼저 상태 반영·저장 후 완료 처리
+      const pending = await getPendingOrders();
+      let addStones = 0;
+      let addEggs = 0;
+      for (const o of pending) {
+        if (o.sku in STONE_BY_SKU) addStones += STONE_BY_SKU[o.sku];
+        else if (o.sku in EGG_BY_SKU) addEggs += EGG_BY_SKU[o.sku];
       }
+      if (addStones > 0) next = { ...next, evolveStones: next.evolveStones + addStones };
+      if (addEggs > 0) next = { ...next, eggs: next.eggs + addEggs };
       setRewardAdSkip(next.adSkip);
       setState(next);
       await Storage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
       setLoaded(true);
       for (const o of pending) {
-        await completeStoneOrder(o.orderId);
+        await completeOrder(o.orderId);
       }
     })();
   }, []);
@@ -527,6 +534,11 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     await save({ ...state, evolveStones: Math.max(0, state.evolveStones + n) });
   };
 
+  const grantEggs = async (n: number) => {
+    if (!Number.isFinite(n) || n === 0) return;
+    await save({ ...state, eggs: Math.max(0, state.eggs + n) });
+  };
+
   const setAdSkip = async (v: boolean) => {
     setRewardAdSkip(v);
     await save({ ...state, adSkip: v });
@@ -596,6 +608,7 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
         canEvolve,
         evolvePet,
         grantStones,
+        grantEggs,
         setAdSkip,
         devUnlockAll,
         devSetStar,

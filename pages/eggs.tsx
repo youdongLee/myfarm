@@ -1,15 +1,17 @@
 import { InlineAd } from '@apps-in-toss/framework';
 import { createRoute, Image } from '@granite-js/react-native';
 import { PageNavbar, Txt } from '@toss/tds-react-native';
-import React from 'react';
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AD_EGG, AD_HATCH, BANNER_EGGS } from '../src/constants/ads';
 import { IMG } from '../src/constants/imageData';
 import { HATCH_MS, HATCH_SLOTS } from '../src/constants/economy';
+import { EGG_BY_SKU, EGG_PRODUCTS } from '../src/constants/iap';
 import { PET_MAP } from '../src/constants/pets';
 import {
   BG, CARD_BORDER, PRIMARY, PRIMARY_DARK, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY,
 } from '../src/constants/theme';
+import { fetchProducts, purchaseProduct, RemoteProduct } from '../src/lib/iap';
 import { runRewardAd } from '../src/lib/rewardAd';
 import { useMyfarm } from '../stores/MyfarmContext';
 
@@ -28,7 +30,50 @@ function formatRemaining(ms: number): string {
 }
 
 function EggsPage() {
-  const { state, now, remaining, claimEggFromAd, startHatch, instantHatch, completeHatch } = useMyfarm();
+  const { state, now, remaining, claimEggFromAd, startHatch, instantHatch, completeHatch, grantEggs } = useMyfarm();
+  const [remote, setRemote] = useState<RemoteProduct[] | null>(null);
+  const [buying, setBuying] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchProducts(new Set(Object.keys(EGG_BY_SKU))).then((list) => { if (alive) setRemote(list); });
+    return () => { alive = false; };
+  }, []);
+
+  const remoteBySku: Record<string, RemoteProduct> = {};
+  (remote ?? []).forEach((p) => { remoteBySku[p.sku] = p; });
+
+  const handleBuy = (sku: string) => {
+    if (buying) return;
+    Alert.alert(
+      '구매 전 안내',
+      '알은 이 기기에 저장돼요.\n\n구매 후 사용하지 않은 알이 남아 있는 상태에서 기기를 변경하면, 남은 알은 복원되지 않고 사라질 수 있어요.\n\n이에 동의하시면 구매를 진행해주세요.',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '구매 진행', onPress: () => startPurchaseEgg(sku) },
+      ],
+    );
+  };
+
+  const startPurchaseEgg = (sku: string) => {
+    if (buying) return;
+    setBuying(sku);
+    purchaseProduct(
+      sku,
+      async () => {
+        const n = EGG_BY_SKU[sku] ?? 0;
+        if (n > 0) await grantEggs(n);
+      },
+      () => {
+        setBuying(null);
+        Alert.alert('🎉 구매 완료', '알이 지급됐어요!');
+      },
+      () => {
+        setBuying(null);
+        Alert.alert('결제가 취소됐어요', '잠시 후 다시 시도해주세요.');
+      },
+    );
+  };
 
   const handleGetEgg = async () => {
     if (remaining.egg <= 0) {
@@ -162,8 +207,47 @@ function EggsPage() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryBtn} onPress={handleGetEgg} activeOpacity={0.85}>
-          <Txt typography="t5" color={PRIMARY_DARK}>광고 보고 알 받기 ({remaining.egg}/6)</Txt>
+          <Txt typography="t5" color={PRIMARY_DARK}>광고 보고 알 받기 ({remaining.egg}/3)</Txt>
         </TouchableOpacity>
+
+        {/* 알 구매 */}
+        <View style={styles.shopSection}>
+          <Txt typography="t5" color={TEXT_PRIMARY} style={{ marginBottom: 4 }}>알 구매</Txt>
+          {remote === null ? (
+            <View style={styles.shopLoading}><ActivityIndicator color={PRIMARY} /></View>
+          ) : (
+            EGG_PRODUCTS.map((p) => {
+              const r = remoteBySku[p.sku];
+              const available = !!r;
+              const isBuying = buying === p.sku;
+              return (
+                <TouchableOpacity
+                  key={p.sku}
+                  style={[styles.eggProduct, !available && styles.eggProductDisabled]}
+                  onPress={() => available && handleBuy(p.sku)}
+                  activeOpacity={available ? 0.8 : 1}
+                  disabled={!available || isBuying}
+                >
+                  <Text style={styles.eggEmoji}>🥚</Text>
+                  <View style={{ flex: 1 }}>
+                    <Txt typography="t5" color={TEXT_PRIMARY}>{r?.displayName ?? p.label}</Txt>
+                    <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>
+                      {available ? r!.displayAmount : '준비 중 (콘솔 등록 후 구매 가능)'}
+                    </Txt>
+                  </View>
+                  <View style={[styles.eggBuyBtn, !available && styles.eggBuyBtnDisabled]}>
+                    <Txt typography="c1" color={available ? '#FFFFFF' : TEXT_MUTED}>
+                      {isBuying ? '결제 중' : available ? '구매' : '준비 중'}
+                    </Txt>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+          <Txt typography="c1" color={TEXT_MUTED} style={{ marginTop: 4 }}>
+            • 미사용 알은 기기 변경 시 복원되지 않아요.
+          </Txt>
+        </View>
       </ScrollView>
     </View>
   );
@@ -209,4 +293,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF', borderRadius: 16, padding: 16, alignItems: 'center',
     borderWidth: 1, borderColor: PRIMARY,
   },
+  shopSection: { gap: 8 },
+  shopLoading: { paddingVertical: 24, alignItems: 'center' },
+  eggProduct: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 12,
+    borderWidth: 1, borderColor: CARD_BORDER,
+  },
+  eggProductDisabled: { opacity: 0.6 },
+  eggEmoji: { fontSize: 26 },
+  eggBuyBtn: {
+    backgroundColor: PRIMARY, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 9, alignItems: 'center', justifyContent: 'center',
+  },
+  eggBuyBtnDisabled: { backgroundColor: '#F3F4F6' },
 });

@@ -7,6 +7,7 @@ import { Route as _ExchangeRoute } from '../pages/exchange';
 import { Route as _GameRoute } from '../pages/game';
 import { Route as _GuideRoute } from '../pages/guide';
 import { Route as _IndexRoute } from '../pages/';
+import { Route as _StonesRoute } from '../pages/stones';
 
 declare module '@granite-js/react-native' {
   interface RegisterScreenInput {
@@ -17,6 +18,7 @@ declare module '@granite-js/react-native' {
     '/game': (typeof _GameRoute)['_inputType'];
     '/guide': (typeof _GuideRoute)['_inputType'];
     '/': (typeof _IndexRoute)['_inputType'];
+    '/stones': (typeof _StonesRoute)['_inputType'];
   }
 
   interface RegisterScreen {
@@ -27,5 +29,6 @@ declare module '@granite-js/react-native' {
     '/game': (typeof _GameRoute)['_outputType'];
     '/guide': (typeof _GuideRoute)['_outputType'];
     '/': (typeof _IndexRoute)['_outputType'];
+    '/stones': (typeof _StonesRoute)['_outputType'];
   }
 }

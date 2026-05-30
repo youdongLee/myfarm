@@ -48,7 +48,7 @@ function DevPage() {
         <View style={styles.card}>
           <Txt typography="t5" color={TEXT_PRIMARY}>오늘 잔여 횟수</Txt>
           <Row label="출석" value={`${remaining.attendance}/1`} />
-          <Row label="알 받기" value={`${remaining.egg}/6`} />
+          <Row label="알 받기" value={`${remaining.egg}/3`} />
           <Row label="게임" value={`${remaining.game}/3`} />
           <Row label="먹이주기" value={`${remaining.feed}/5`} />
           <Row label="교환" value={`${remaining.exchange}/1`} />

@@ -22,3 +22,24 @@ export const STONE_BY_SKU: Record<string, number> = STONE_PRODUCTS.reduce(
   },
   {} as Record<string, number>,
 );
+
+/** 알 인앱결제 상품 (B안: 5/15/40개) */
+export interface EggProduct {
+  sku: string;
+  eggs: number;
+  label: string;
+}
+
+export const EGG_PRODUCTS: EggProduct[] = [
+  { sku: 'TEST_EGG_5', eggs: 5, label: '알 5개' },
+  { sku: 'TEST_EGG_15', eggs: 15, label: '알 15개' },
+  { sku: 'TEST_EGG_40', eggs: 40, label: '알 40개' },
+];
+
+export const EGG_BY_SKU: Record<string, number> = EGG_PRODUCTS.reduce(
+  (m, p) => {
+    m[p.sku] = p.eggs;
+    return m;
+  },
+  {} as Record<string, number>,
+);
