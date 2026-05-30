@@ -46,6 +46,7 @@ interface PersistState {
   ownedStars: Record<string, number>; // petId → 1..5 (없으면 0)
   petStages: Record<string, number>; // petId → 0(아기)~3(성인), 없으면 0
   evolveStones: number; // 진화석 보유량 (IAP로 충전 예정)
+  pendingCoinsBank: number; // 농장 구성 변경 시 락인된 미수확 코인 (현재 구간 외 누적분)
   adSkip: boolean; // [개발용] 보상형 광고 스킵 토글
   farmPets: (string | null)[]; // length = FARM_SLOTS
   eggs: number;
@@ -129,6 +130,7 @@ function emptyState(): PersistState {
     ownedStars: {},
     petStages: {},
     evolveStones: 0,
+    pendingCoinsBank: 0,
     adSkip: false,
     farmPets: Array(FARM_SLOTS).fill(null),
     eggs: 0,
@@ -156,6 +158,7 @@ function migrate(raw: any): PersistState {
     ownedStars: raw.ownedStars && typeof raw.ownedStars === 'object' ? raw.ownedStars : {},
     petStages: raw.petStages && typeof raw.petStages === 'object' ? raw.petStages : {},
     evolveStones: typeof raw.evolveStones === 'number' ? raw.evolveStones : 0,
+    pendingCoinsBank: typeof raw.pendingCoinsBank === 'number' ? raw.pendingCoinsBank : 0,
     adSkip: typeof raw.adSkip === 'boolean' ? raw.adSkip : false,
     petTotals: raw.petTotals && typeof raw.petTotals === 'object' ? raw.petTotals : {},
     lastPetted: raw.lastPetted && typeof raw.lastPetted === 'object' ? raw.lastPetted : {},
@@ -188,6 +191,53 @@ function rollPet(ownedStars: Record<string, number>): string {
   // 2) 등급 안에서 균등
   const arr = byRarity[chosenRarity];
   return arr[Math.floor(Math.random() * arr.length)].id;
+}
+
+/** 주어진 상태 스냅샷의 시간당 생산량 (특정 시점 기준 버프 반영) */
+function computeHourlyRate(s: PersistState, atTimeMs: number): number {
+  return s.farmPets.reduce<number>((sum, petId) => {
+    if (!petId) return sum;
+    const def = PET_MAP[petId];
+    const star = s.ownedStars[petId] ?? 0;
+    if (!def || star < 1) return sum;
+    const stageMult = STAGE_MULTIPLIER[s.petStages[petId] ?? 0] ?? 1;
+    const base = (def.coinPerHour[star - 1] ?? 0) * stageMult;
+    const buffed = (s.feedBuffs[petId] ?? 0) > atTimeMs ? base * FEED_BUFF_MULTIPLIER : base;
+    return sum + buffed;
+  }, 0);
+}
+
+/**
+ * 마지막 정산 이후 누적분을 락인한다 (현재 농장 구성으로 계산).
+ * 농장 구성·별·단계·버프 등 생산량에 영향 주는 상태 변경 직전에 반드시 호출.
+ * 펫별 기여분은 petTotals에 즉시 분배 → 헤더 누적 정확도 유지.
+ */
+function settle(prev: PersistState, nowMs: number): PersistState {
+  const elapsedMs = Math.min(nowMs - prev.lastHarvest, MAX_IDLE_HOURS * 3600 * 1000);
+  if (elapsedMs <= 0) return prev;
+  const hours = elapsedMs / 3600000;
+  const newTotals = { ...prev.petTotals };
+  let earned = 0;
+  prev.farmPets.forEach((petId) => {
+    if (!petId) return;
+    const def = PET_MAP[petId];
+    const star = prev.ownedStars[petId] ?? 0;
+    if (!def || star < 1) return;
+    const stageMult = STAGE_MULTIPLIER[prev.petStages[petId] ?? 0] ?? 1;
+    const base = (def.coinPerHour[star - 1] ?? 0) * stageMult;
+    const buffed = (prev.feedBuffs[petId] ?? 0) > nowMs ? base * FEED_BUFF_MULTIPLIER : base;
+    const contrib = Math.floor(buffed * hours);
+    if (contrib > 0) {
+      newTotals[petId] = (newTotals[petId] ?? 0) + contrib;
+      earned += contrib;
+    }
+  });
+  return {
+    ...prev,
+    pendingCoinsBank: prev.pendingCoinsBank + earned,
+    petTotals: newTotals,
+    lastHarvest: nowMs,
+  };
 }
 
 const MyfarmContext = createContext<MyfarmContextValue | null>(null);
@@ -248,24 +298,19 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 시간당 생산량 = 농장 펫 각각의 (별 단계 코인 × 버프배수) 합
-  const hourlyRate = useMemo(() => {
-    return state.farmPets.reduce((sum, petId) => {
-      if (!petId) return sum;
-      const def = PET_MAP[petId];
-      const star = state.ownedStars[petId] ?? 0;
-      if (!def || star < 1) return sum;
-      const stageMult = STAGE_MULTIPLIER[state.petStages[petId] ?? 0] ?? 1;
-      const base = (def.coinPerHour[star - 1] ?? 0) * stageMult;
-      const buffed = (state.feedBuffs[petId] ?? 0) > now ? base * FEED_BUFF_MULTIPLIER : base;
-      return sum + buffed;
-    }, 0);
-  }, [state.farmPets, state.ownedStars, state.petStages, state.feedBuffs, now]);
+  const hourlyRate = useMemo(
+    () => computeHourlyRate(state, now),
+    [state.farmPets, state.ownedStars, state.petStages, state.feedBuffs, now],
+  );
 
+  // 미수확 코인 = 락인된 누적분(bank) + 현재 구간(현재 농장 구성으로) 추정분(8시간 캡)
   const pendingCoins = useMemo(() => {
     const elapsedMs = Math.min(now - state.lastHarvest, MAX_IDLE_HOURS * 3600 * 1000);
-    if (elapsedMs <= 0 || hourlyRate <= 0) return 0;
-    return Math.floor((elapsedMs / 3600000) * hourlyRate);
-  }, [now, state.lastHarvest, hourlyRate]);
+    const currentSegment = elapsedMs > 0 && hourlyRate > 0
+      ? Math.floor((elapsedMs / 3600000) * hourlyRate)
+      : 0;
+    return state.pendingCoinsBank + currentSegment;
+  }, [now, state.lastHarvest, state.pendingCoinsBank, hourlyRate]);
 
   const remaining: Record<ActionKey, number> = useMemo(() => {
     const today = todayKst();
@@ -309,34 +354,25 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     if (!canEvolve(petId)) return false;
     const stage = state.petStages[petId] ?? 0;
     const cost = EVOLVE_STONE_COST[stage] ?? Infinity;
+    const base = settle(state, Date.now()); // 단계/별 변경 전 누적분 락인
     const next: PersistState = {
-      ...state,
-      evolveStones: state.evolveStones - cost,
-      petStages: { ...state.petStages, [petId]: stage + 1 },
-      ownedStars: { ...state.ownedStars, [petId]: 1 },
+      ...base,
+      evolveStones: base.evolveStones - cost,
+      petStages: { ...base.petStages, [petId]: stage + 1 },
+      ownedStars: { ...base.ownedStars, [petId]: 1 },
     };
     await save(next);
     return true;
   };
 
   const harvest = async (): Promise<number> => {
-    const amount = pendingCoins;
-    if (amount <= 0) return 0;
-    // 펫별 기여도로 누적 분배 (헤더 누적 표시용)
-    const elapsedHours = Math.min(now - state.lastHarvest, MAX_IDLE_HOURS * 3600 * 1000) / 3600000;
-    const newTotals = { ...state.petTotals };
-    state.farmPets.forEach(petId => {
-      if (!petId) return;
-      const contrib = Math.floor(petHourlyRate(petId) * elapsedHours);
-      newTotals[petId] = (newTotals[petId] ?? 0) + contrib;
-    });
-    const next: PersistState = {
-      ...state,
-      coins: state.coins + amount,
-      petTotals: newTotals,
-      lastHarvest: Date.now(),
-    };
-    await save(next);
+    const settled = settle(state, Date.now());
+    const amount = settled.pendingCoinsBank;
+    if (amount <= 0) {
+      if (settled !== state) await save(settled);
+      return 0;
+    }
+    await save({ ...settled, coins: settled.coins + amount, pendingCoinsBank: 0 });
     return amount;
   };
 
@@ -376,14 +412,16 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
 
   const hatchOne = async (index: number): Promise<string | null> => {
     if (index < 0 || index >= state.hatching.length) return null;
-    const petId = rollPet(state.ownedStars);
-    const currStar = state.ownedStars[petId] ?? 0;
+    // 별/농장 변경 전 기존 구성으로 누적분 락인
+    const base = settle(state, Date.now());
+    const petId = rollPet(base.ownedStars);
+    const currStar = base.ownedStars[petId] ?? 0;
     const newStar = Math.min(currStar + 1, MAX_STAR);
-    const newOwned = { ...state.ownedStars, [petId]: newStar };
-    const newHatching = state.hatching.filter((_, i) => i !== index);
+    const newOwned = { ...base.ownedStars, [petId]: newStar };
+    const newHatching = base.hatching.filter((_, i) => i !== index);
 
     // 농장 빈 자리에 자동 배치 (새로 획득한 펫만)
-    let newFarm = state.farmPets;
+    let newFarm = base.farmPets;
     if (currStar === 0) {
       const emptyIdx = newFarm.indexOf(null);
       if (emptyIdx >= 0) {
@@ -393,7 +431,7 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
     }
 
     const next: PersistState = {
-      ...state,
+      ...base,
       ownedStars: newOwned,
       hatching: newHatching,
       farmPets: newFarm,
@@ -417,9 +455,10 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
   const feedPet = async (petId: string): Promise<boolean> => {
     if (remaining.feed <= 0) return false;
     if ((state.ownedStars[petId] ?? 0) < 1) return false;
+    const base = settle(state, Date.now()); // 버프 시작 전 누적분 락인
     const next: PersistState = {
-      ...state,
-      feedBuffs: { ...state.feedBuffs, [petId]: Date.now() + FEED_BUFF_MS },
+      ...base,
+      feedBuffs: { ...base.feedBuffs, [petId]: Date.now() + FEED_BUFF_MS },
       daily: incDaily('feed'),
     };
     await save(next);
@@ -429,7 +468,9 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
   const swapFarmPet = async (slot: number, petId: string | null) => {
     if (slot < 0 || slot >= FARM_SLOTS) return;
     if (petId && (state.ownedStars[petId] ?? 0) < 1) return;
-    const newFarm = [...state.farmPets];
+    // 기존 농장 구성으로 누적분 락인 (새 펫이 과거 시간만큼 채굴한 것처럼 계산되는 버그 방지)
+    const base = settle(state, Date.now());
+    const newFarm = [...base.farmPets];
     // 이미 다른 슬롯에 같은 펫이 있으면 swap
     if (petId) {
       const existing = newFarm.indexOf(petId);
@@ -438,7 +479,7 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
       }
     }
     newFarm[slot] = petId;
-    await save({ ...state, farmPets: newFarm });
+    await save({ ...base, farmPets: newFarm });
   };
 
   const addGameReward = async (coins: number, bonusEgg: boolean) => {
@@ -492,9 +533,10 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
   };
 
   const devUnlockAll = async () => {
-    const owned = { ...state.ownedStars };
+    const base = settle(state, Date.now());
+    const owned = { ...base.ownedStars };
     PETS.forEach(p => { if ((owned[p.id] ?? 0) < 1) owned[p.id] = 1; });
-    const farm = [...state.farmPets];
+    const farm = [...base.farmPets];
     const placed = new Set(farm.filter(Boolean) as string[]);
     let pi = 0;
     for (let i = 0; i < farm.length; i++) {
@@ -502,25 +544,27 @@ export function MyfarmProvider({ children }: { children: React.ReactNode }) {
       while (pi < PETS.length && placed.has(PETS[pi].id)) pi++;
       if (pi < PETS.length) { farm[i] = PETS[pi].id; placed.add(PETS[pi].id); pi++; }
     }
-    await save({ ...state, ownedStars: owned, farmPets: farm });
+    await save({ ...base, ownedStars: owned, farmPets: farm });
   };
 
   const devSetStar = async (petId: string, star: number) => {
     const s = Math.max(0, Math.min(MAX_STAR, Math.round(star)));
-    const owned = { ...state.ownedStars };
+    const base = settle(state, Date.now());
+    const owned = { ...base.ownedStars };
     if (s <= 0) {
       delete owned[petId];
-      const farm = state.farmPets.map(p => (p === petId ? null : p));
-      await save({ ...state, ownedStars: owned, farmPets: farm });
+      const farm = base.farmPets.map(p => (p === petId ? null : p));
+      await save({ ...base, ownedStars: owned, farmPets: farm });
     } else {
       owned[petId] = s;
-      await save({ ...state, ownedStars: owned });
+      await save({ ...base, ownedStars: owned });
     }
   };
 
   const devSetStage = async (petId: string, stage: number) => {
     const st = Math.max(0, Math.min(MAX_STAGE, Math.round(stage)));
-    await save({ ...state, petStages: { ...state.petStages, [petId]: st } });
+    const base = settle(state, Date.now());
+    await save({ ...base, petStages: { ...base.petStages, [petId]: st } });
   };
 
   const resetAll = async () => {
