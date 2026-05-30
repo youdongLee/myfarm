@@ -2,7 +2,7 @@ import { InlineAd } from '@apps-in-toss/framework';
 import { createRoute, Image } from '@granite-js/react-native';
 import { PageNavbar, Txt } from '@toss/tds-react-native';
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { AD_EGG, AD_HATCH, BANNER_EGGS } from '../src/constants/ads';
 import { IMG } from '../src/constants/imageData';
 import { HATCH_MS, HATCH_SLOTS } from '../src/constants/economy';
@@ -54,24 +54,30 @@ function EggsPage() {
     await startHatch();
   };
 
-  const handleHatch = async (index: number, ready: boolean) => {
-    if (ready) {
-      const petId = await completeHatch(index);
+  const handleComplete = async (index: number) => {
+    const petId = await completeHatch(index);
+    if (petId) {
+      const pet = PET_MAP[petId];
+      Alert.alert('🎉 펫을 만났어요!', `${pet?.name}이(가) 부화했어요!`);
+    }
+  };
+
+  const askInstantHatch = (index: number) => {
+    Alert.alert('즉시 부화', '광고를 본 뒤 남은 시간 없이 바로 부화시킬까요?', [
+      { text: '취소', style: 'cancel' },
+      { text: '광고 보고 부화', onPress: () => doInstantHatch(index) },
+    ]);
+  };
+
+  const doInstantHatch = async (index: number) => {
+    const ok = await runRewardAd(AD_HATCH, async () => {
+      const petId = await instantHatch(index);
       if (petId) {
         const pet = PET_MAP[petId];
         Alert.alert('🎉 펫을 만났어요!', `${pet?.name}이(가) 부화했어요!`);
       }
-    } else {
-      // 즉시 부화는 광고
-      const ok = await runRewardAd(AD_HATCH, async () => {
-        const petId = await instantHatch(index);
-        if (petId) {
-          const pet = PET_MAP[petId];
-          Alert.alert('🎉 펫을 만났어요!', `${pet?.name}이(가) 부화했어요!`);
-        }
-      });
-      if (!ok) Alert.alert('광고를 불러올 수 없어요', '잠시 후 다시 시도해주세요.');
-    }
+    });
+    if (!ok) Alert.alert('광고를 불러올 수 없어요', '잠시 후 다시 시도해주세요.');
   };
 
   return (
@@ -107,11 +113,9 @@ function EggsPage() {
             const ready = remainMs <= 0;
             const progress = Math.min(1, elapsed / total);
             return (
-              <TouchableOpacity
+              <View
                 key={i}
                 style={[styles.hatchCard, ready && styles.hatchReady]}
-                onPress={() => handleHatch(i, ready)}
-                activeOpacity={0.8}
               >
                 <Image source={EGG_IMG} style={styles.hatchEgg} />
                 <View style={{ flex: 1 }}>
@@ -119,7 +123,7 @@ function EggsPage() {
                     {ready ? '🎉 부화 완료!' : '부화 중...'}
                   </Txt>
                   <Txt typography="c1" color={ready ? 'rgba(255,255,255,0.9)' : TEXT_SECONDARY} style={{ marginTop: 2 }}>
-                    {ready ? '탭해서 만나보기' : `${formatRemaining(remainMs)} 또는 광고 보고 즉시 부화`}
+                    {ready ? '받기 버튼을 눌러주세요' : `${formatRemaining(remainMs)} 남음`}
                   </Txt>
                   {!ready && (
                     <View style={styles.progressTrack}>
@@ -127,8 +131,24 @@ function EggsPage() {
                     </View>
                   )}
                 </View>
-                <Text style={[styles.cardArrow, ready && { color: '#FFFFFF' }]}>›</Text>
-              </TouchableOpacity>
+                {ready ? (
+                  <TouchableOpacity
+                    style={styles.cardActionReady}
+                    onPress={() => handleComplete(i)}
+                    activeOpacity={0.8}
+                  >
+                    <Txt typography="t5" color={PRIMARY_DARK}>받기</Txt>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.cardActionInstant}
+                    onPress={() => askInstantHatch(i)}
+                    activeOpacity={0.8}
+                  >
+                    <Txt typography="c1" color="#FFFFFF">즉시 부화</Txt>
+                  </TouchableOpacity>
+                )}
+              </View>
             );
           })}
         </View>
@@ -174,7 +194,14 @@ const styles = StyleSheet.create({
     marginTop: 6, height: 4, backgroundColor: '#F3F4F6', borderRadius: 2, overflow: 'hidden',
   },
   progressFill: { height: '100%', backgroundColor: PRIMARY },
-  cardArrow: { fontSize: 20, color: '#B0B8C1' },
+  cardActionReady: {
+    backgroundColor: '#FFFFFF', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center', justifyContent: 'center',
+  },
+  cardActionInstant: {
+    backgroundColor: PRIMARY, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center', justifyContent: 'center',
+  },
   primaryBtn: {
     backgroundColor: PRIMARY, borderRadius: 16, padding: 16, alignItems: 'center',
   },
