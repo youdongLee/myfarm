@@ -2,7 +2,7 @@ import { InlineAd } from '@apps-in-toss/framework';
 import { createRoute, Image } from '@granite-js/react-native';
 import { PageNavbar, Txt } from '@toss/tds-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { AD_EGG, AD_HATCH, BANNER_EGGS } from '../src/constants/ads';
 import { IMG } from '../src/constants/imageData';
 import { HATCH_MS, HATCH_SLOTS } from '../src/constants/economy';
@@ -228,7 +228,7 @@ function EggsPage() {
                   activeOpacity={available ? 0.8 : 1}
                   disabled={!available || isBuying}
                 >
-                  <Text style={styles.eggEmoji}>🥚</Text>
+                  <Image source={IMG.egg_purchase} style={styles.eggProductIcon} />
                   <View style={{ flex: 1 }}>
                     <Txt typography="t5" color={TEXT_PRIMARY}>{r?.displayName ?? p.label}</Txt>
                     <Txt typography="c1" color={TEXT_SECONDARY} style={{ marginTop: 2 }}>
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: CARD_BORDER,
   },
   eggProductDisabled: { opacity: 0.6 },
-  eggEmoji: { fontSize: 26 },
+  eggProductIcon: { width: 44, height: 44, resizeMode: 'contain' },
   eggBuyBtn: {
     backgroundColor: PRIMARY, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 9, alignItems: 'center', justifyContent: 'center',

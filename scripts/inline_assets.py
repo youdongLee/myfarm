@@ -31,6 +31,7 @@ ASSETS_TABLE = [
     ('items/food_bone.png',         'food_bone',         100, 'PNG'),
     ('items/food_golden_apple.png', 'food_golden_apple', 100, 'PNG'),
     ('items/food_bomb.png',         'food_bomb',         100, 'PNG'),
+    ('items/egg_puchase_item.png',  'egg_purchase',      120, 'PNG'),
     # ui — farm 배경 JPEG (투명도 불필요), 정사각형 표시이므로 해상도 좀 키움
     ('ui/farm_bg.png',    'farm_bg',    720, 'JPEG'),
     ('ui/nest_empty.png', 'nest_empty', 120, 'PNG'),

@@ -3,6 +3,7 @@
 import { Route as _DevRoute } from '../pages/dev';
 import { Route as _DexRoute } from '../pages/dex';
 import { Route as _EggsRoute } from '../pages/eggs';
+import { Route as _EvolutionGuideRoute } from '../pages/evolution-guide';
 import { Route as _ExchangeRoute } from '../pages/exchange';
 import { Route as _GameRoute } from '../pages/game';
 import { Route as _GuideRoute } from '../pages/guide';
@@ -14,6 +15,7 @@ declare module '@granite-js/react-native' {
     '/dev': (typeof _DevRoute)['_inputType'];
     '/dex': (typeof _DexRoute)['_inputType'];
     '/eggs': (typeof _EggsRoute)['_inputType'];
+    '/evolution-guide': (typeof _EvolutionGuideRoute)['_inputType'];
     '/exchange': (typeof _ExchangeRoute)['_inputType'];
     '/game': (typeof _GameRoute)['_inputType'];
     '/guide': (typeof _GuideRoute)['_inputType'];
@@ -25,6 +27,7 @@ declare module '@granite-js/react-native' {
     '/dev': (typeof _DevRoute)['_outputType'];
     '/dex': (typeof _DexRoute)['_outputType'];
     '/eggs': (typeof _EggsRoute)['_outputType'];
+    '/evolution-guide': (typeof _EvolutionGuideRoute)['_outputType'];
     '/exchange': (typeof _ExchangeRoute)['_outputType'];
     '/game': (typeof _GameRoute)['_outputType'];
     '/guide': (typeof _GuideRoute)['_outputType'];

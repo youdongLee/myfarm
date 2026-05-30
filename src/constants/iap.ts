@@ -31,9 +31,9 @@ export interface EggProduct {
 }
 
 export const EGG_PRODUCTS: EggProduct[] = [
-  { sku: 'TEST_EGG_5', eggs: 5, label: '알 5개' },
-  { sku: 'TEST_EGG_15', eggs: 15, label: '알 15개' },
-  { sku: 'TEST_EGG_40', eggs: 40, label: '알 40개' },
+  { sku: 'ait.0000036186.fe480e27.5ca5e8e8a1.0122019447', eggs: 5, label: '알 5개' },
+  { sku: 'ait.0000036186.fcf5243d.9aef916fd9.0122049415', eggs: 15, label: '알 15개' },
+  { sku: 'ait.0000036186.899e1ea3.a8312f8ee4.0122075177', eggs: 40, label: '알 40개' },
 ];
 
 export const EGG_BY_SKU: Record<string, number> = EGG_PRODUCTS.reduce(

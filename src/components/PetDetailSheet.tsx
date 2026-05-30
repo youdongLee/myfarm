@@ -30,8 +30,13 @@ function formatBuffRemain(ms: number): string {
 }
 
 export function PetDetailSheet({
-  petId, onClose, onBuyStones,
-}: { petId: string | null; onClose: () => void; onBuyStones?: () => void }) {
+  petId, onClose, onBuyStones, onOpenGuide,
+}: {
+  petId: string | null;
+  onClose: () => void;
+  onBuyStones?: () => void;
+  onOpenGuide?: () => void;
+}) {
   const {
     state, now, petHourlyRate, isPettedToday, remaining,
     feedPet, petPet, swapFarmPet, petStage, canEvolve, evolvePet,
@@ -282,6 +287,11 @@ export function PetDetailSheet({
               <Txt typography="t5" color={PRIMARY_DARK}>💎 진화석 구매</Txt>
             </TouchableOpacity>
           )}
+          {onOpenGuide && (
+            <TouchableOpacity onPress={onOpenGuide} activeOpacity={0.7} style={styles.guideLink}>
+              <Txt typography="c1" color={TEXT_MUTED}>진화란? 자세히 알아보기 ›</Txt>
+            </TouchableOpacity>
+          )}
         </View>
 
         <TouchableOpacity onPress={handleRelease} activeOpacity={0.7} style={styles.releaseBtn}>
@@ -375,6 +385,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, alignItems: 'center',
     borderWidth: 1, borderColor: PRIMARY,
   },
+  guideLink: { alignItems: 'center', paddingVertical: 2 },
 
   releaseBtn: {
     paddingVertical: 12, alignItems: 'center',

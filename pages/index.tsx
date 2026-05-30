@@ -222,7 +222,7 @@ function HomePage() {
         </View>
 
         <TouchableOpacity activeOpacity={1} onPress={handleVersionTap}>
-          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.27</Txt>
+          <Txt typography="c1" color={TEXT_MUTED} style={styles.version}>v1.0.28</Txt>
         </TouchableOpacity>
       </ScrollView>
 
@@ -230,6 +230,7 @@ function HomePage() {
         petId={selectedPetId}
         onClose={() => setSelectedPetId(null)}
         onBuyStones={() => { setSelectedPetId(null); navigation.navigate('/stones'); }}
+        onOpenGuide={() => { setSelectedPetId(null); navigation.navigate('/evolution-guide'); }}
       />
     </View>
   );

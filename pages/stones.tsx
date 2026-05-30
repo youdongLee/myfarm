@@ -15,6 +15,7 @@ export const Route = createRoute('/stones', {
 });
 
 function StonesPage() {
+  const navigation = Route.useNavigation();
   const { state, grantStones } = useMyfarm();
   const [remote, setRemote] = useState<RemoteProduct[] | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
@@ -74,6 +75,14 @@ function StonesPage() {
           </View>
         </View>
 
+        <TouchableOpacity
+          onPress={() => navigation.navigate('/evolution-guide')}
+          activeOpacity={0.7}
+          style={styles.guideLink}
+        >
+          <Txt typography="c1" color={PRIMARY}>진화란? 자세히 알아보기 ›</Txt>
+        </TouchableOpacity>
+
         {remote === null ? (
           <View style={styles.loading}>
             <ActivityIndicator color={PRIMARY} />
@@ -128,6 +137,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: CARD_BORDER,
   },
   gem: { fontSize: 36 },
+  guideLink: { alignItems: 'center', paddingVertical: 4 },
   loading: { paddingVertical: 40, alignItems: 'center' },
   product: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
